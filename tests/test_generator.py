@@ -175,7 +175,7 @@ def suggestion_generator():
     assert os.getenv("MEM0_API_KEY"), "MEM0_API_KEY must be set"
     
     # Get proxy URL from environment if set
-    proxy_url = os.getenv("OPENAI_PROXY_URL")
+    proxy_url = os.getenv("OPENAI_PROXY")
     
     return SuggestionGenerator(
         openai_api_key=os.getenv("OPENAI_API_KEY"),
