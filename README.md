@@ -10,7 +10,7 @@
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/me_app_suggestions.git
+git clone https://github.com/dmitryn2018/me_app_suggestions.git
 cd me_app_suggestions
 ```
 
