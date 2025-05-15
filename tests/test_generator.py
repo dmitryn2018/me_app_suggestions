@@ -210,10 +210,10 @@ async def test_memory_integration_with_full_conversation(suggestion_generator, m
     
     try:
         print("\n=== Starting memory integration test ===")
-        # print("\nSaving full conversation in memory...")
-        # add_response = await memory_service.add_memory(test_user_id, full_conversation)
-        # assert add_response, "Should get response from add_memory"
-        # print("Full conversation saved in memory")
+        print("\nSaving full conversation in memory...")
+        add_response = await memory_service.add_memory(test_user_id, full_conversation)
+        assert add_response, "Should get response from add_memory"
+        print("Full conversation saved in memory")
 
         # Request memories from memory service
         print("\nRequesting memories from memory service...")
