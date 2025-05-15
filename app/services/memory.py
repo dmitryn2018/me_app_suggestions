@@ -90,7 +90,7 @@ class MemoryService:
         return goals
     
     async def add_memory(self, user_id: str, messages: List[Dict[str, str]]) -> Dict[str, Any]:
-        return await self.client.add(messages=messages, user_id=user_id)
+        return await self.client.add(messages=messages, user_id=user_id, output_format="v1.1")
     
     async def get_recent_conversations(self, user_id: str) -> List[Dict[str, Any]]:
         """Retrieve user's recent conversations."""
