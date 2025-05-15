@@ -20,7 +20,7 @@ suggestion_generator = SuggestionGenerator(
 @router.get("/suggestions", response_model=List[Suggestion])
 async def get_suggestions(
     user_id: str,
-    n: int = Query(default=3, description="Number of suggestions to return", ge=1, le=10)
+    n: int = Query(default=3, description="Number of suggestions to return", ge=1, le=20)
 ):
     """
     Get personalized suggestions for the user based on their memory and conversations.
@@ -31,7 +31,7 @@ async def get_suggestions(
     
     Args:
         user_id: The ID of the user to get suggestions for
-        n: Number of suggestions to return (1-10, default 3)
+        n: Number of suggestions to return (1-20, default 3)
         
     Returns:
         List[Suggestion]: A list of personalized suggestions
@@ -42,7 +42,7 @@ async def get_suggestions(
     """
     try:
         # Validate n parameter
-        if n < 1 or n > 10:
+        if n < 1 or n > 20:
             raise HTTPException(
                 status_code=422,
                 detail="Number of suggestions (n) must be between 1 and 10"
