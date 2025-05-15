@@ -36,7 +36,7 @@ curl -X GET "${BASE_URL}/suggestions?user_id=${USER_ID}&n=20" \
 echo -e "\n-----------------------------------\n"
 
 # Test 3: Test invalid n parameter
-echo -e "${GREEN}Test 3: Test invalid n parameter (n=11)${NC}"
+echo -e "${GREEN}Test 3: Test invalid n parameter (n=21)${NC}"
 curl -X GET "${BASE_URL}/suggestions?user_id=${USER_ID}&n=11" \
   -H "accept: application/json" \
   -w "\nStatus code: %{http_code}\n"
