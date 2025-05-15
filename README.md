@@ -1,3 +1,55 @@
+# Suggestions Service
+
+## Project Overview
+
+The Suggestions Service is an intelligent recommendation system that leverages advanced AI models to provide short personalized suggestions based on user interactions and memories. Built with FastAPI and integrated with multiple AI services, this system offers an approach to understanding user context and generating relevant suggestions across different domains:
+
+### Core Capabilities
+
+1. **Memory-Based Personalization**
+   - Maintains a persistent memory of user interactions using Mem0
+   - Categorizes memories into 16 distinct domains (personal, professional, lifestyle, etc.)
+   - Uses historical context to generate more relevant suggestions
+
+2. **Multi-Modal AI Integration**
+   - Automatic model selection based on content type
+
+3. **Smart Context Understanding**
+   - Analyzes user conversations and memories
+   - Identifies patterns and preferences
+   - Maintains user goals and project context
+
+4. **Flexible API Architecture**
+   - RESTful endpoints for easy integration
+   - Scalable FastAPI backend
+   - Comprehensive error handling and validation
+
+### Technical Architecture
+
+The service is structured into several key components:
+
+```
+me_app_suggestions/
+├── app/                      # Main application directory
+│   ├── models/              # Data models and schemas
+│   ├── routers/             # API route handlers
+│   ├── services/            # Core business logic
+│   │   ├── generator.py     # Suggestion generation logic
+│   │   └── memory.py        # Memory management service
+│   └── main.py             # Application entry point
+├── tests/                   # Test suite
+└── requirements.txt         # Dependencies
+```
+
+### Key Files and Their Purposes
+
+1. **app/main.py**: Application entry point and FastAPI configuration
+2. **app/models.py**: Pydantic models for data validation and serialization
+3. **app/services/generator.py**: Core suggestion generation logic and model selection
+4. **app/services/memory.py**: Memory management and categorization
+5. **app/routers/suggestions.py**: API endpoint definitions and request handling
+6. **tests/**: Test suite for all components
+
 ## Prerequisites
 
 - Python 3.8+
