@@ -143,25 +143,3 @@ python -m pytest -v
 # Run integration tests
 python -m pytest tests/test_suggestions_router.py::test_suggestions_with_real_memory
 ```
-
-## Development
-
-### Project Structure
-
-```
-me_app_suggestions/
-├── app/
-│   ├── models/
-│   │   └── suggestions.py
-│   ├── services/
-│   │   ├── generator.py
-│   │   └── memory.py
-│   └── main.py
-├── tests/
-│   ├── test_generator.py
-│   ├── test_suggestions.py
-│   └── test_suggestions_router.py
-├── .env
-├── requirements.txt
-└── README.md
-```
