@@ -45,7 +45,7 @@ async def get_suggestions(
         if n < 1 or n > 20:
             raise HTTPException(
                 status_code=422,
-                detail="Number of suggestions (n) must be between 1 and 10"
+                detail="Number of suggestions (n) must be between 1 and 20"
             )
         
         # Get user data from memory service
