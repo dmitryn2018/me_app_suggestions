@@ -76,6 +76,9 @@ curl -X GET "http://localhost:8000/api/v1/suggestions?user_id=test_user&n=3"
 The project includes comprehensive tests for all components. To run the tests:
 
 ```bash
+# Install dependencies:
+pip install -r requirements-dev.txt
+
 # Run all tests
 python -m pytest
 
