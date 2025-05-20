@@ -24,7 +24,6 @@ class SuggestionList(BaseModel):
 
 class SuggestionGenerator:
     def __init__(self, openai_api_key: str, mem0_api_key: str, proxy_url: str = None):
-        
         # Initialize proxy client if URL is provided
         client = None
         if proxy_url:
@@ -39,73 +38,18 @@ class SuggestionGenerator:
         self.memory = ConversationBufferMemory()
         self.mem0_client = AsyncMemoryClient(api_key=mem0_api_key)
         self.suggestion_parser = PydanticOutputParser(pydantic_object=SuggestionList)
-        self.model_parser = PydanticOutputParser(pydantic_object=ModelSelection)
         self.memory_service = MemoryService()
         
+        # Combine both prompts into one since model selection is now part of suggestion generation
         self.suggestion_prompt = ChatPromptTemplate.from_messages([
             ("system", """You are a suggestion generator that creates personalized suggestions based on conversation history and memories, one for each memory by the very least.
+            Also you are an expert AI model selection assistant, and your task in this role is to analyze suggestions and determine the optimal AI model based on the user's request and available user model preferences.
+            
             IMPORTANT: You must generate _exactly_ {num_memories} suggestions – no more, no fewer – one corresponding to each memory provided.  
-            
-            CRITICAL RULES FOR SUGGESTIONS:
-            1. For ANY coding-related content (programming, algorithms, Python, etc):
-               - You MUST set model_type="code" (lowercase)
-               - You MUST use "anthropic/claude-3.7-sonnet" as the selected_model
-               - Keywords that indicate coding: python, algorithm, code, function, programming, development, optimization
-            
-            2. For image-related content (visuals, designs, etc):
-               - You MUST set model_type="image" (lowercase)
-               - Select an appropriate image model
-               - Keywords that indicate images: design, logo, visual, picture, photo, illustration
-            
-            3. For writing-related content (blog posts, documentation, stories, etc):
-               - Set model_type="text" (lowercase)
-               - Keywords that indicate writing: blog, post, article, story, document, write
-            
-            Each suggestion should be concise and actionable. Format as a JSON object with a 'suggestions' field containing a list of objects.
-            Each suggestion object MUST have these EXACT fields:
-            - 'title': A short, descriptive title
-            - 'description': A clear, actionable description
-            - 'model_type': Must be one of: 'text', 'code', or 'image' (all lowercase)
-            - 'selected_model': Must be one of the available models for the chosen model_type
-            
-            Example coding suggestion:
-            {{
-              "title": "Optimize Graph Algorithm",
-              "description": "Enhance the depth-first search implementation with additional optimizations",
-              "model_type": "code",
-              "selected_model": "anthropic/claude-3.7-sonnet"
-            }}"""),
-            ("user", """Based on these messages and memories, generate relevant suggestions:
-            
-            Messages:
-            {messages}
-            
-            Memories:
-            {memories}
-            
-            Format each suggestion as:
-            {format_instructions}""")
-        ])
-
-        self.model_selection_prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are an expert AI model selection assistant. Your task is to analyze suggestions and determine the optimal AI model based on the user's request and available user model preferences.
             For each suggestion, determine:
-            1. Determine Model Type: Decide whether the suggestion requires an Image or Text model. This is CRITICAL, especially when the user has pre-selected models, as we need to know whether to use their selected image model or text model.
+            1. Determine Model Type: Decide whether the suggestion requires an Image, Code or Text model. This is CRITICAL, especially when the user has pre-selected models, as we need to know whether to use their selected image model, code model or text model.
             2. Select the Best Model: Choose the most suitable model from the provided options or use the user-selected model if indicated in the instructions.
-            
-            Your response MUST be formatted as a JSON object with:
-            - model_type: Either 'Image' or 'Text'
-            - selected_model: The ID of the selected model"""),
-            ("user", """TASK: Analyze the suggestions and consider the model preferences to achieve the following:
-
-            1. Clearly identify if the prompt requires an Image or Text model.
-            2. Select the most appropriate model from the following options, considering both the prompt and [ai_model_preferences]:
-
-            Title: {title}
-            Description: {description}
-            Type: {type}
              
-            
             SUPER IMPORTANT RULE: For image generation requests or text-to-image prompts, ALWAYS set MODEL_TYPE as "Image" and select an appropriate image model.
 
             SUPER IMPORTANT RULE: If the user requests a specific model (e.g., "use Claude" or "use GPT 4.1"), select that model regardless of any other settings or considerations.
@@ -138,9 +82,9 @@ class SuggestionGenerator:
             - For current events or trends, prioritize "x-ai/grok-3-beta".
             - For coding tasks: "anthropic/claude-3.7-sonnet".
              
-            ### IMAGE VS. TEXT PROMPT IDENTIFICATION GUIDANCE:
+            ### IMAGE VS. TEXT VS. CODE PROMPT IDENTIFICATION GUIDANCE:
 
-            Use the following criteria to determine if a prompt requires an Image or Text model:
+            Use the following criteria to determine if a prompt requires an Image, Code, or Text model:
 
             #### Indicators of Image Prompts:
             - Explicit requests for images, pictures, visuals, drawings, illustrations, etc.
@@ -156,50 +100,50 @@ class SuggestionGenerator:
             - Tasks involving reasoning, calculation, or problem-solving
             - Use of phrases like "explain", "write", "analyze", "how to", "why is", etc
              
+            #### Indicators of Code Prompts:
+            - Requests to write, analyze, debug, or optimize code snippets or scripts
+            - Mentions of specific programming languages (Python, JavaScript, Java, etc.)
+            - Keywords such as "implement", "debug", "refactor", "optimize", "code", "script", "function", "algorithm"
+            - Requests for code examples, library usage, or coding patterns
+            - Use of phrases like "show the code", "write a function", "fix the bug", "generate code for"
+             
             ### USER AI MODEL PREFERENCES:
 
             This section contains specific information about which AI models the user prefers for different types of tasks or scenarios. You MUST prioritize these specific preferences if they exist for the current task type.
             [user_ai_model_preferences]|| "No user AI model preferences available."
-            """)
+            
+            Each suggestion should be concise and actionable. Format as a JSON object with a 'suggestions' field containing a list of objects.
+            Each suggestion object MUST have these EXACT fields:
+            - 'title': A short, descriptive title
+            - 'description': A clear, actionable description
+            - 'model_type': Must be one of: 'text', 'code', or 'image' (all lowercase)
+            - 'selected_model': Must be one of the available models for the chosen model_type
+            
+            Example response format:
+            {{
+                "suggestions": [
+                    {{
+                        "title": "Optimize Graph Algorithm",
+                        "description": "Enhance the depth-first search implementation with additional optimizations",
+                        "model_type": "code",
+                        "selected_model": "anthropic/claude-3.7-sonnet"
+                    }},
+                    {{
+                        "title": "Create Modern Logo",
+                        "description": "Design a minimalist tech startup logo",
+                        "model_type": "image",
+                        "selected_model": "recraft-ai/recraft-v3-svg"
+                    }}
+                ]
+            }}"""),
+            ("user", """Based on these messages and memories, generate relevant suggestions:
+            
+            Messages:
+            {messages}
+            
+            Memories:
+            {memories}""")
         ])
-
-    def _format_messages_for_prompt(self, messages: List[dict]) -> str:
-        formatted = []
-        for msg in messages:
-            role = msg.get("role", "unknown")
-            content = msg.get("content", "")
-            formatted.append(f"{role}: {content}")
-        return "\n\n".join(formatted)
-
-    async def _select_model_for_suggestion(self, suggestion: Suggestion) -> ModelSelection:
-        """Select the appropriate model for a given suggestion."""
-        try:
-            chain = self.model_selection_prompt | self.llm | self.model_parser
-            result = await chain.ainvoke({
-                "title": suggestion.title,
-                "description": suggestion.description,
-                "type": suggestion.model_type,
-                "format_instructions": self.model_parser.get_format_instructions()
-            })
-            return result
-        except Exception as e:
-            print(f"Error selecting model for suggestion: {str(e)}")
-            # Default model selection based on type
-            if suggestion.model_type.lower() == "code":
-                return ModelSelection(
-                    model_type="code",  # Preserve CODE type
-                    selected_model="anthropic/claude-3.7-sonnet"
-                )
-            elif suggestion.model_type.lower() == "image":
-                return ModelSelection(
-                    model_type="Image",
-                    selected_model="openai/gpt-image-1"
-                )
-            else:
-                return ModelSelection(
-                    model_type="Text",
-                    selected_model="gpt-4.1"
-                )
 
     async def generate_from_conversations(
         self,
@@ -215,43 +159,28 @@ class SuggestionGenerator:
                 print(f"Memory: {memory.get('memory', '')}")
 
             formatted_messages = self._format_messages_for_prompt(conversations)
-            print("\nFormatted messages:")
-            for msg in formatted_messages.split("\n"):
-                print(msg)
-
             formatted_memories = self._format_memories(memories)
-            print("\nFormatted memories:")
-            print(formatted_memories)
-
+            
             print("\nGenerating suggestions...")
             try:
-                # Generate initial suggestions
+                # Generate suggestions with model selection included
                 num_memories = len(memories)
-
                 chain = self.suggestion_prompt | self.llm | self.suggestion_parser
                 result = await chain.ainvoke({
                     "messages": formatted_messages,
                     "memories": formatted_memories,
-                    "num_memories": num_memories,
-                    "format_instructions": self.suggestion_parser.get_format_instructions(),
-                    "user_ai_model_preferences": "No user AI model preferences available."
+                    "num_memories": num_memories
                 })
                 suggestions = result.suggestions
                 print(f"Generated {len(suggestions)} suggestions")
-
-                # Select models for each suggestion
-                print("\nSelecting models for suggestions...")
+                
                 for suggestion in suggestions:
-                    model_selection = await self._select_model_for_suggestion(suggestion)
-                    suggestion.selected_model = model_selection.selected_model
-                    suggestion.model_type = model_selection.model_type
-                    print(f"Selected {model_selection.selected_model} ({model_selection.model_type}) for: {suggestion.title}")
+                    print(f"Generated: {suggestion.title} ({suggestion.model_type}) - Model: {suggestion.selected_model}")
                 
                 return suggestions
             
             except Exception as e:
                 print(f"Error generating suggestions: {str(e)}")
-                # Provide fallback suggestions based on conversation context
                 return self._generate_fallback_suggestions(conversations, memories)
 
         except Exception as e:
@@ -266,6 +195,14 @@ class SuggestionGenerator:
             }
             for msg in conversations
         ]
+
+    def _format_messages_for_prompt(self, messages: List[dict]) -> str:
+        formatted = []
+        for msg in messages:
+            role = msg.get("role", "unknown")
+            content = msg.get("content", "")
+            formatted.append(f"{role}: {content}")
+        return "\n\n".join(formatted)
 
     def _format_memories(self, memories: List[Dict[str, Any]]) -> str:
         return "\n".join(
